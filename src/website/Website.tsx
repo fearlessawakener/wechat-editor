@@ -21,7 +21,13 @@ export function Website() {
           <nav className="nav">
             <a href="#features">功能特性</a>
             <a href="#how">使用方式</a>
-            <a href="#start">开始使用</a>
+            <a
+              href="https://github.com/fearlessawakener/wechat-editor"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              GitHub
+            </a>
           </nav>
           <button
             type="button"
