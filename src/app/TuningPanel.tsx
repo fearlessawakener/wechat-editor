@@ -9,7 +9,7 @@ interface TuningPanelProps {
   onReset: () => void
 }
 
-// 思源系列 + 霞鹜文楷 + 霞鹜新致宋。
+// 思源系列。
 const SOURCE_HAN_SERIF = {
   label: '思源宋体',
   value:
@@ -20,27 +20,9 @@ const SOURCE_HAN_SANS = {
   value:
     "'Source Han Sans SC', 'Source Han Sans CN', '思源黑体', 'Noto Sans CJK SC', sans-serif",
 }
-const LXGW_WENKAI = {
-  label: '霞鹜文楷',
-  value: "'霞鹜文楷', 'LXGW WenKai', 'LXGW WenKai GB', serif",
-}
-const LXGW_ZHISONG = {
-  label: '霞鹜新致宋',
-  value: "'霞鹜新致宋', 'LXGW ZhiSong', 'LXGW Neo ZhiSong', serif",
-}
-const SONGTI = { label: '宋体', value: "'Songti SC', SimSun, serif" }
-const KAITI = { label: '楷体', value: "'Kaiti SC', KaiTi, serif" }
 
-// 内容、引用字体：思源黑体后接霞鹜文楷，不含宋体/楷体。
-const FONT_OPTIONS = [
-  SOURCE_HAN_SERIF,
-  SOURCE_HAN_SANS,
-  LXGW_WENKAI,
-  LXGW_ZHISONG,
-]
-
-// 标题字体：在内容字体基础上额外提供宋体、楷体。
-const HEADING_FONT_OPTIONS = [...FONT_OPTIONS, SONGTI, KAITI]
+// 内容、标题、引用字体共用：思源宋体、思源黑体。
+const FONT_OPTIONS = [SOURCE_HAN_SERIF, SOURCE_HAN_SANS]
 
 const CODE_FONT_OPTIONS = [
   {
@@ -146,7 +128,7 @@ export function TuningPanel({
           style={{ width: 130 }}
         >
           <option value="">跟随内容</option>
-          {HEADING_FONT_OPTIONS.map((f) => (
+          {FONT_OPTIONS.map((f) => (
             <option key={f.label} value={f.value}>
               {f.label}
             </option>

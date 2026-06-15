@@ -97,7 +97,7 @@ function baseStyles(): Theme['styles'] {
     blockquote: (t) => ({
       fontFamily: t.blockquoteFontFamily,
       margin: `${t.paragraphSpacing} 0`,
-      padding: '10px 16px',
+      padding: '4px 16px',
       borderLeft: `4px solid ${t.primaryColor}`,
       borderRadius: '6px',
       background: t.blockquoteBackground,

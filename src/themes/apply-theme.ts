@@ -50,7 +50,7 @@ export function applyTheme(
   // 深拷贝，避免污染原始树。structuredClone 在目标环境（现代浏览器/Node18+）可用。
   const cloned = structuredClone(tree)
 
-  visit(cloned, 'element', (node: Element) => {
+  visit(cloned, 'element', (node: Element, _index, parent) => {
     // 微信全程不认 class：移除任何来源的 className（含 language-xxx）。
     if (node.properties && 'className' in node.properties) {
       delete node.properties.className
@@ -62,6 +62,22 @@ export function applyTheme(
     if (!styleFn) return
 
     const themeStyles: CssProperties = styleFn(tokens)
+
+    // 引用块内的段落：首段去上 margin、末段去下 margin，避免引用内部上下留白过宽
+    // （微信不支持 :first-child 等选择器，只能在渲染阶段按位置注入）。
+    if (
+      tag === 'p' &&
+      parent &&
+      parent.type === 'element' &&
+      (parent as Element).tagName === 'blockquote'
+    ) {
+      const siblings = (parent as Element).children.filter(
+        (c) => c.type === 'element',
+      )
+      if (siblings[0] === node) themeStyles.marginTop = '0'
+      if (siblings[siblings.length - 1] === node) themeStyles.marginBottom = '0'
+    }
+
     const existing =
       typeof node.properties?.style === 'string'
         ? node.properties.style
