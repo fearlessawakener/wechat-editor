@@ -39,7 +39,24 @@ themes           负责不同公众号样式
 clipboard        负责复制 text/html
 storage          负责草稿保存
 checker          负责微信兼容性检查
+website          官网落地页（独立页面，引流到编辑器）
 ```
+
+## 页面结构（Vite MPA）
+
+项目为 Vite 多页应用（multi-page app），两个独立入口：
+
+```text
+index.html   → src/website-entry.tsx → website/Website   官网落地页
+editor.html  → src/editor-entry.tsx  → app/App           编辑器（核心产品）
+```
+
+- 多入口在 `vite.config.ts` 的 `build.rollupOptions.input` 中声明（`index` + `editor`）。
+- 官网「打开编辑器」按钮通过 `window.open('editor.html', '_blank')` 在新标签页打开编辑器，
+  两页各自独立打包、互不影响。
+- 官网为纯展示页，仅依赖 React，不引入编辑器相关依赖（CodeMirror / markdown 管线）。
+  样式走常规 CSS class（`website/website.css`），与「微信正文仅 inline style」约束无关——
+  该约束只作用于编辑器导出的文章 HTML，不约束官网自身。
 
 ## 关键实现决策
 

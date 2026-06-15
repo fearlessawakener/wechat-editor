@@ -13,6 +13,11 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
+      // 多页应用：index.html=官网落地页，editor.html=编辑器。
+      input: {
+        index: fileURLToPath(new URL('./index.html', import.meta.url)),
+        editor: fileURLToPath(new URL('./editor.html', import.meta.url)),
+      },
       output: {
         manualChunks: {
           react: ['react', 'react-dom'],

@@ -1,8 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { markdownToHast, hastToHtml } from '../markdown-core'
+import { markdownToHast, hastToHtml, extractMeta } from '../markdown-core'
 import { renderThemedHast } from './render-themed.ts'
 import { defaultTheme, getThemeById } from './themes.ts'
 import { stylesToString, mergeStyle } from './style-utils.ts'
+import { injectMetaBar } from './meta-bar.ts'
+import type { ThemeTokens } from './tokens.ts'
 
 function render(md: string, themeId = 'classic'): string {
   const tree = markdownToHast(md)
@@ -71,5 +73,102 @@ describe('renderThemedHast', () => {
     )
     expect(base).not.toContain('font-size:19px')
     expect(tuned).toContain('font-size:19px')
+  })
+})
+
+describe('injectMetaBar', () => {
+  const tokens: ThemeTokens = defaultTheme.tokens
+
+  function themedHtml(md: string, overrides?: Partial<ThemeTokens>): string {
+    const tree = markdownToHast(md)
+    const themed = renderThemedHast(tree, defaultTheme, overrides)
+    return hastToHtml(themed)
+  }
+
+  function fullRender(md: string, overrides?: Partial<ThemeTokens>): string {
+    const { cleaned, meta } = extractMeta(md)
+    const mergedTokens = { ...tokens, ...overrides }
+    const tree = markdownToHast(cleaned)
+    const themed = renderThemedHast(tree, defaultTheme, overrides)
+    const withMeta = injectMetaBar(themed, meta, mergedTokens)
+    return hastToHtml(withMeta)
+  }
+
+  it('在 h1 后注入 meta section', () => {
+    const html = fullRender('# Title\n<原创>')
+    expect(html).toMatch(/<h1 [^>]*>Title<\/h1>/)
+    // meta bar section 应在 h1 之后
+    expect(html).toMatch(/<\/h1><section style="[^"]*display:flex/)
+  })
+
+  it('无 h1 时不注入', () => {
+    const html = fullRender('just a paragraph <原创>')
+    expect(html).not.toContain('display:flex')
+  })
+
+  it('无 meta 时空操作', () => {
+    const html = fullRender('# Title\n\nContent')
+    expect(html).not.toContain('border-bottom')
+  })
+
+  it('标签使用 primaryColor 作徽章背景', () => {
+    const html = fullRender('# Title\n<原创>')
+    expect(html).toContain(`background:${tokens.primaryColor}`)
+    expect(html).toContain('color:#fff')
+  })
+
+  it('作者使用 blockquoteColor', () => {
+    const html = fullRender('# Title\n##Alice##')
+    expect(html).toContain(tokens.blockquoteColor)
+    expect(html).toContain('Alice')
+  })
+
+  it('日期使用 blockquoteColor', () => {
+    const html = fullRender('# Title\n##2026-06-16##')
+    expect(html).toContain('2026-06-16')
+    expect(html).toContain(tokens.blockquoteColor)
+  })
+
+  it('同时渲染 tags + author + date', () => {
+    const html = fullRender('# Title\n<原创> ##Alice## ##2026-06-16##')
+    expect(html).toContain('原创')
+    expect(html).toContain('Alice')
+    expect(html).toContain('2026-06-16')
+  })
+
+  it('使用 borderColor 作底部分隔线', () => {
+    const html = fullRender('# Title\n<原创>')
+    expect(html).toContain(`border-bottom:1px solid ${tokens.borderColor}`)
+  })
+
+  it('不输出 class 属性', () => {
+    const html = fullRender('# Title\n<原创> ##Alice##')
+    expect(html).not.toContain('class=')
+  })
+
+  it('微调覆盖的 primaryColor 生效', () => {
+    const html = fullRender('# Title\n<原创>', { primaryColor: '#ff0000' })
+    expect(html).toContain('background:#ff0000')
+    expect(html).not.toContain(`background:${tokens.primaryColor}`)
+  })
+
+  it('只有 tags 时正常渲染（无右侧）', () => {
+    const html = fullRender('# Title\n<原创> <干货>')
+    expect(html).toContain('原创')
+    expect(html).toContain('干货')
+    // 不应有 margin-left:auto（右侧容器不存在）
+    // 但 flex 容器依然存在
+    expect(html).toMatch(/display:flex/)
+  })
+
+  it('只有 author 时正常渲染（无左侧 tags）', () => {
+    const html = fullRender('# Title\n##Alice##')
+    expect(html).toContain('Alice')
+    expect(html).not.toContain('原创')
+  })
+
+  it('h1 字号为 28px', () => {
+    const html = themedHtml('# Title')
+    expect(html).toContain('font-size:28px')
   })
 })

@@ -1,6 +1,11 @@
 import { useMemo } from 'react'
-import { markdownToHast, hastToHtml, hastToReact } from '../markdown-core'
-import { renderThemedHast, getCodeThemeById } from '../themes'
+import {
+  markdownToHast,
+  hastToHtml,
+  hastToReact,
+  extractMeta,
+} from '../markdown-core'
+import { renderThemedHast, getCodeThemeById, injectMetaBar } from '../themes'
 import type { Theme, ThemeTokens, WindowStyle } from '../themes'
 import type { ReactNode } from 'react'
 import type { Root as HastRoot, Element } from 'hast'
@@ -57,7 +62,15 @@ export function useThemedRender(
     const codeTheme = getCodeThemeById(codeThemeId ?? '')
     // 合并 overrides 后的正文字体（面板微调读这里才生效）。
     const fontFamily = tokenOverrides?.fontFamily ?? theme.tokens.fontFamily
-    const base = markdownToHast(source)
+    const tokens: ThemeTokens = { ...theme.tokens, ...tokenOverrides }
+
+    // Step 1: 从原始 Markdown 提取 meta 信息（在解析前移除自定义语法）
+    const { cleaned, meta } = extractMeta(source)
+
+    // Step 2: 解析清理后的 Markdown → 安全 hast
+    const base = markdownToHast(cleaned)
+
+    // Step 3: 主题渲染（代码高亮 + inline style 注入）
     const themed = renderThemedHast(
       base,
       theme,
@@ -65,8 +78,12 @@ export function useThemedRender(
       codeTheme,
       windowStyle,
     )
-    // 包一层定宽 section：预览(node)、复制(html)、检查(tree)同源，宽度与正文字体一致。
-    const wrapped = wrapInArticle(themed, fontFamily)
+
+    // Step 4: 在 h1 后注入 meta bar（原地修改 themed）
+    const withMeta = injectMetaBar(themed, meta, tokens)
+
+    // Step 5: 包一层定宽 section；预览(node)、复制(html)、检查(tree)同源
+    const wrapped = wrapInArticle(withMeta, fontFamily)
     return {
       node: hastToReact(wrapped),
       html: hastToHtml(wrapped),
