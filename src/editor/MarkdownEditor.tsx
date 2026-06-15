@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import type { MutableRefObject } from 'react'
 import { EditorState } from '@codemirror/state'
 import { EditorView, keymap, lineNumbers } from '@codemirror/view'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
@@ -7,6 +8,8 @@ import { markdown } from '@codemirror/lang-markdown'
 interface MarkdownEditorProps {
   value: string
   onChange: (value: string) => void
+  // 可选：把内部真实滚动容器（.cm-scroller）暴露给父组件，用于同步滚动。
+  scrollerRef?: MutableRefObject<HTMLElement | null>
 }
 
 /**
@@ -15,7 +18,11 @@ interface MarkdownEditorProps {
  * 受控用法：`value` 为唯一数据源，编辑触发 `onChange` 向上传递。
  * 这里只把外部 `value` 与编辑器内容做必要同步，避免每次 keystroke 重建 view。
  */
-export function MarkdownEditor({ value, onChange }: MarkdownEditorProps) {
+export function MarkdownEditor({
+  value,
+  onChange,
+  scrollerRef,
+}: MarkdownEditorProps) {
   const hostRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
   // 用 ref 持有最新 onChange，避免它进入 effect 依赖导致 view 重建。
@@ -52,10 +59,12 @@ export function MarkdownEditor({ value, onChange }: MarkdownEditorProps) {
 
     const view = new EditorView({ state, parent: hostRef.current })
     viewRef.current = view
+    if (scrollerRef) scrollerRef.current = view.scrollDOM
 
     return () => {
       view.destroy()
       viewRef.current = null
+      if (scrollerRef) scrollerRef.current = null
     }
     // 仅挂载时创建一次；value 的外部变更由下面的 effect 同步。
     // eslint-disable-next-line react-hooks/exhaustive-deps

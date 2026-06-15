@@ -1,8 +1,10 @@
 import type { Theme } from './types.ts'
 import type { ThemeTokens } from './tokens.ts'
 
+// 默认正文字体：思源黑体（与微调面板「思源黑体」选项 value 保持一致，
+// 使初始下拉有匹配项）；系统未装时按 stack 回退到系统无衬线。
 const SANS =
-  "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif"
+  "'Source Han Sans SC', 'Source Han Sans CN', '思源黑体', 'Noto Sans CJK SC', sans-serif"
 const MONO = "'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace"
 
 /**
@@ -15,13 +17,16 @@ const MONO = "'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace"
 function baseStyles(): Theme['styles'] {
   return {
     h1: (t) => ({
+      fontFamily: t.headingFontFamily,
       fontSize: '24px',
       fontWeight: 700,
       color: t.headingColor,
       lineHeight: '1.4',
       margin: '28px 0 16px',
+      textAlign: 'center',
     }),
     h2: (t) => ({
+      fontFamily: t.headingFontFamily,
       fontSize: '20px',
       fontWeight: 700,
       color: t.headingColor,
@@ -31,6 +36,7 @@ function baseStyles(): Theme['styles'] {
       paddingLeft: '10px',
     }),
     h3: (t) => ({
+      fontFamily: t.headingFontFamily,
       fontSize: '17px',
       fontWeight: 700,
       color: t.headingColor,
@@ -38,18 +44,21 @@ function baseStyles(): Theme['styles'] {
       margin: '20px 0 12px',
     }),
     h4: (t) => ({
+      fontFamily: t.headingFontFamily,
       fontSize: '15px',
       fontWeight: 700,
       color: t.headingColor,
       margin: '18px 0 10px',
     }),
     h5: (t) => ({
+      fontFamily: t.headingFontFamily,
       fontSize: '14px',
       fontWeight: 700,
       color: t.headingColor,
       margin: '16px 0 8px',
     }),
     h6: (t) => ({
+      fontFamily: t.headingFontFamily,
       fontSize: '14px',
       fontWeight: 700,
       color: t.blockquoteColor,
@@ -61,9 +70,10 @@ function baseStyles(): Theme['styles'] {
       lineHeight: t.lineHeight,
       margin: `${t.paragraphSpacing} 0`,
     }),
-    a: (t) => ({
-      color: t.primaryColor,
-      textDecoration: 'none',
+    // 链接固定用经典链接蓝 + 下划线，不随主题变化（忽略 tokens）。
+    a: () => ({
+      color: '#0066cc',
+      textDecoration: 'underline',
       wordBreak: 'break-all',
     }),
     strong: (t) => ({ fontWeight: 700, color: t.headingColor }),
@@ -85,9 +95,11 @@ function baseStyles(): Theme['styles'] {
       margin: '6px 0',
     }),
     blockquote: (t) => ({
+      fontFamily: t.blockquoteFontFamily,
       margin: `${t.paragraphSpacing} 0`,
       padding: '10px 16px',
       borderLeft: `4px solid ${t.primaryColor}`,
+      borderRadius: '6px',
       background: t.blockquoteBackground,
       color: t.blockquoteColor,
       fontSize: t.fontSize,
@@ -122,20 +134,28 @@ function baseStyles(): Theme['styles'] {
       borderRadius: '4px',
     }),
     table: (t) => ({
-      borderCollapse: 'collapse',
+      // 用 separate + overflow:hidden 让外框圆角生效（collapse 模式圆角无效）。
+      borderCollapse: 'separate',
+      borderSpacing: 0,
       width: '100%',
       margin: `${t.paragraphSpacing} 0`,
       fontSize: t.fontSize,
+      border: `1px solid ${t.borderColor}`,
+      borderRadius: '6px',
+      overflow: 'hidden',
     }),
     th: (t) => ({
-      border: `1px solid ${t.borderColor}`,
+      // 单元格只留右/下边框，外框提供顶/左边，避免双线。
+      borderRight: `1px solid ${t.borderColor}`,
+      borderBottom: `1px solid ${t.borderColor}`,
       padding: '8px 12px',
       background: t.blockquoteBackground,
       color: t.headingColor,
       fontWeight: 700,
     }),
     td: (t) => ({
-      border: `1px solid ${t.borderColor}`,
+      borderRight: `1px solid ${t.borderColor}`,
+      borderBottom: `1px solid ${t.borderColor}`,
       padding: '8px 12px',
       color: t.textColor,
     }),
@@ -159,12 +179,12 @@ function withPreCodeReset(styles: Theme['styles']): Theme['styles'] {
 
 const classicTokens: ThemeTokens = {
   fontFamily: SANS,
-  fontSize: '15px',
+  fontSize: '16px',
   textColor: '#3f3f3f',
   primaryColor: '#07c160',
   headingColor: '#1f2329',
-  lineHeight: '1.75',
-  paragraphSpacing: '16px',
+  lineHeight: '1.8',
+  paragraphSpacing: '18px',
   borderColor: '#e5e6e8',
   codeFontFamily: MONO,
   codeBackground: '#f6f8fa',
@@ -174,7 +194,7 @@ const classicTokens: ThemeTokens = {
 
 const elegantTokens: ThemeTokens = {
   fontFamily: SANS,
-  fontSize: '15px',
+  fontSize: '16px',
   textColor: '#4a4a4a',
   primaryColor: '#5b6cf0',
   headingColor: '#2b2b40',
@@ -189,17 +209,34 @@ const elegantTokens: ThemeTokens = {
 
 const warmTokens: ThemeTokens = {
   fontFamily: SANS,
-  fontSize: '15px',
+  fontSize: '16px',
   textColor: '#4d4439',
   primaryColor: '#e8804f',
   headingColor: '#3a2f25',
   lineHeight: '1.8',
-  paragraphSpacing: '16px',
+  paragraphSpacing: '18px',
   borderColor: '#ece3d8',
   codeFontFamily: MONO,
   codeBackground: '#faf6f0',
   blockquoteBackground: '#faf4ec',
   blockquoteColor: '#8a7a66',
+}
+
+// Obsidian Gold：深邃曜石蓝（obsidian）作标题/正文，金色（gold）作主色装饰。
+// 受微信正文「白底 + 仅 inline style」约束，深色仅用于文字与边框，不做深色背景。
+const obsidianGoldTokens: ThemeTokens = {
+  fontFamily: SANS,
+  fontSize: '16px',
+  textColor: '#33302a',
+  primaryColor: '#bf9b30',
+  headingColor: '#14213d',
+  lineHeight: '1.8',
+  paragraphSpacing: '18px',
+  borderColor: '#e6dcc2',
+  codeFontFamily: MONO,
+  codeBackground: '#f8f4ea',
+  blockquoteBackground: '#faf6ea',
+  blockquoteColor: '#6b6450',
 }
 
 export const themes: Theme[] = [
@@ -219,6 +256,12 @@ export const themes: Theme[] = [
     id: 'warm',
     name: '暖橙',
     tokens: warmTokens,
+    styles: withPreCodeReset(baseStyles()),
+  },
+  {
+    id: 'obsidian-gold',
+    name: 'Obsidian Gold',
+    tokens: obsidianGoldTokens,
     styles: withPreCodeReset(baseStyles()),
   },
 ]

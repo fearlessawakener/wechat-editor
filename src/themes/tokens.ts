@@ -7,6 +7,10 @@
 export interface ThemeTokens {
   /** 正文字体 */
   fontFamily: string
+  /** 标题字体；未设置时回退到正文字体（fontFamily） */
+  headingFontFamily?: string
+  /** 引用块字体；未设置时回退到正文字体（fontFamily） */
+  blockquoteFontFamily?: string
   /** 正文字号，如 '15px' */
   fontSize: string
   /** 正文颜色 */

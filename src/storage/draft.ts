@@ -1,10 +1,14 @@
-import type { ThemeTokens } from '../themes'
+import type { ThemeTokens, WindowStyle } from '../themes'
 
 /** 草稿数据结构。tokenOverrides 为 Phase 7 微调预留。 */
 export interface Draft {
   source: string
   themeId: string
   tokenOverrides?: Partial<ThemeTokens>
+  /** 代码高亮主题 id，缺失时由 App 兜默认值 */
+  codeThemeId?: string
+  /** 代码块窗口装饰风格，缺失时由 App 兜默认值 */
+  windowStyle?: WindowStyle
 }
 
 const KEY = 'wechat-editor:draft'
@@ -26,6 +30,12 @@ export function loadDraft(): Draft | null {
       source: parsed.source,
       themeId: typeof parsed.themeId === 'string' ? parsed.themeId : '',
       tokenOverrides: parsed.tokenOverrides,
+      codeThemeId:
+        typeof parsed.codeThemeId === 'string' ? parsed.codeThemeId : undefined,
+      windowStyle:
+        parsed.windowStyle === 'mac' || parsed.windowStyle === 'win'
+          ? parsed.windowStyle
+          : undefined,
     }
   } catch {
     return null

@@ -1,9 +1,14 @@
-import type { Theme } from '../themes'
+import type { Theme, CodeTheme, WindowStyle } from '../themes'
 
 interface ToolbarProps {
   themes: Theme[]
   currentThemeId: string
   onThemeChange: (id: string) => void
+  codeThemes: CodeTheme[]
+  currentCodeThemeId: string
+  onCodeThemeChange: (id: string) => void
+  windowStyle: WindowStyle
+  onWindowStyleChange: (style: WindowStyle) => void
   onFormat?: () => void
   onCopy?: () => void
   onNew?: () => void
@@ -34,6 +39,11 @@ export function Toolbar({
   themes,
   currentThemeId,
   onThemeChange,
+  codeThemes,
+  currentCodeThemeId,
+  onCodeThemeChange,
+  windowStyle,
+  onWindowStyleChange,
   onFormat,
   onCopy,
   onNew,
@@ -64,6 +74,29 @@ export function Toolbar({
             {t.name}
           </option>
         ))}
+      </select>
+
+      <select
+        value={currentCodeThemeId}
+        onChange={(e) => onCodeThemeChange(e.target.value)}
+        style={{ ...buttonStyle, paddingRight: 24 }}
+        title="代码高亮主题"
+      >
+        {codeThemes.map((t) => (
+          <option key={t.id} value={t.id}>
+            {t.name}
+          </option>
+        ))}
+      </select>
+
+      <select
+        value={windowStyle}
+        onChange={(e) => onWindowStyleChange(e.target.value as WindowStyle)}
+        style={{ ...buttonStyle, paddingRight: 24 }}
+        title="代码块窗口风格"
+      >
+        <option value="mac">Mac 风格</option>
+        <option value="win">Windows 风格</option>
       </select>
 
       <button

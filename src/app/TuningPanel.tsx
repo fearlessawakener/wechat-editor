@@ -9,14 +9,53 @@ interface TuningPanelProps {
   onReset: () => void
 }
 
+// 思源系列 + 霞鹜文楷 + 霞鹜新致宋。
+const SOURCE_HAN_SERIF = {
+  label: '思源宋体',
+  value:
+    "'Source Han Serif SC', 'Source Han Serif CN', '思源宋体', 'Noto Serif CJK SC', serif",
+}
+const SOURCE_HAN_SANS = {
+  label: '思源黑体',
+  value:
+    "'Source Han Sans SC', 'Source Han Sans CN', '思源黑体', 'Noto Sans CJK SC', sans-serif",
+}
+const LXGW_WENKAI = {
+  label: '霞鹜文楷',
+  value: "'霞鹜文楷', 'LXGW WenKai', 'LXGW WenKai GB', serif",
+}
+const LXGW_ZHISONG = {
+  label: '霞鹜新致宋',
+  value: "'霞鹜新致宋', 'LXGW ZhiSong', 'LXGW Neo ZhiSong', serif",
+}
+const SONGTI = { label: '宋体', value: "'Songti SC', SimSun, serif" }
+const KAITI = { label: '楷体', value: "'Kaiti SC', KaiTi, serif" }
+
+// 内容、引用字体：思源黑体后接霞鹜文楷，不含宋体/楷体。
 const FONT_OPTIONS = [
+  SOURCE_HAN_SERIF,
+  SOURCE_HAN_SANS,
+  LXGW_WENKAI,
+  LXGW_ZHISONG,
+]
+
+// 标题字体：在内容字体基础上额外提供宋体、楷体。
+const HEADING_FONT_OPTIONS = [...FONT_OPTIONS, SONGTI, KAITI]
+
+const CODE_FONT_OPTIONS = [
   {
-    label: '系统无衬线',
-    value:
-      "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif",
+    label: '系统等宽',
+    value: "'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace",
   },
-  { label: '宋体', value: "'Songti SC', SimSun, serif" },
-  { label: '楷体', value: "'Kaiti SC', KaiTi, serif" },
+  {
+    label: 'JetBrainsMono',
+    value:
+      "'JetBrainsMono Nerd Font Mono', 'JetBrainsMono Nerd Font', monospace",
+  },
+  {
+    label: 'Monaspace Krypton',
+    value: "'Monaspace Krypton Frozen', 'Monaspace Krypton', monospace",
+  },
 ]
 
 const rowStyle: React.CSSProperties = {
@@ -85,13 +124,60 @@ export function TuningPanel({
       </div>
 
       <div style={rowStyle}>
-        <span style={labelStyle}>字体</span>
+        <span style={labelStyle}>内容字体</span>
         <select
           value={merged.fontFamily}
           onChange={(e) => set('fontFamily', e.target.value)}
           style={{ width: 130 }}
         >
           {FONT_OPTIONS.map((f) => (
+            <option key={f.label} value={f.value}>
+              {f.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div style={rowStyle}>
+        <span style={labelStyle}>标题字体</span>
+        <select
+          value={merged.headingFontFamily ?? ''}
+          onChange={(e) => set('headingFontFamily', e.target.value)}
+          style={{ width: 130 }}
+        >
+          <option value="">跟随内容</option>
+          {HEADING_FONT_OPTIONS.map((f) => (
+            <option key={f.label} value={f.value}>
+              {f.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div style={rowStyle}>
+        <span style={labelStyle}>引用字体</span>
+        <select
+          value={merged.blockquoteFontFamily ?? ''}
+          onChange={(e) => set('blockquoteFontFamily', e.target.value)}
+          style={{ width: 130 }}
+        >
+          <option value="">跟随内容</option>
+          {FONT_OPTIONS.map((f) => (
+            <option key={f.label} value={f.value}>
+              {f.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div style={rowStyle}>
+        <span style={labelStyle}>代码字体</span>
+        <select
+          value={merged.codeFontFamily}
+          onChange={(e) => set('codeFontFamily', e.target.value)}
+          style={{ width: 130 }}
+        >
+          {CODE_FONT_OPTIONS.map((f) => (
             <option key={f.label} value={f.value}>
               {f.label}
             </option>

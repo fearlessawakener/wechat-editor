@@ -15,5 +15,6 @@
 
 - `docs/overview.md`：项目总介绍。
 - `docs/architecture.md`：技术栈、架构。
+- `docs/markdown-to-html.md`：Markdown 各语法转换成的 HTML，及主题 inline style 注入说明。
 - `docs/roadmap.md`：开发规划，按 phase 指导 agent 渐进式开发。
 - `docs/playbooks/task-memory.md`：task memory 操作手册。

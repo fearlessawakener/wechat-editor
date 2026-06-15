@@ -59,4 +59,9 @@ checker          负责微信兼容性检查
   高亮由预览侧 lowlight 完成，以此控制 bundle 体积。
 - **lowlight 按需注册语言**：不使用 `common` 全量语言包，仅注册常用语言
   （见 `themes/highlight.ts`）。
+- **代码主题与文章主题正交**：代码块高亮配色（Atom One Dark/Light，见
+  `themes/code-themes.ts`）和窗口装饰风格（Mac/Windows）独立于文章主题，由
+  `renderThemedHast` → `highlightCodeBlocks` 透传。`highlightCodeBlocks` 把
+  `pre` 替换为「窗口装饰容器（标题栏 + 圆点/方块 + 语言标签）+ 代码区」的
+  inline-style 结构，借 `mergeStyle` 优先级盖过文章主题的代码底色。
 
