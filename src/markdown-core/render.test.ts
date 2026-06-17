@@ -4,7 +4,7 @@ import { formatMarkdown } from './format.ts'
 
 describe('markdownToHtml', () => {
   it('renders headings', () => {
-    expect(markdownToHtml('# Hello')).toContain('<h1>Hello</h1>')
+    expect(markdownToHtml('# Hello')).toContain('<h1 id="hello">Hello</h1>')
   })
 
   it('renders paragraphs and inline strong/em', () => {
@@ -50,6 +50,41 @@ describe('markdownToHtml', () => {
 
   it('renders thematic break', () => {
     expect(markdownToHtml('---')).toContain('<hr>')
+  })
+
+  it('renders custom highlight, underline and wavy underline syntax', () => {
+    const html = markdownToHtml('==高亮== ++下划线++ ~波浪线~')
+    expect(html).toContain('background-color:#fff3a3')
+    expect(html).toContain('<u>下划线</u>')
+    expect(html).toContain('text-decoration-style:wavy')
+    expect(html).toContain('>波浪线</span>')
+  })
+
+  it('keeps double-tilde strikethrough', () => {
+    expect(markdownToHtml('~~删除线~~')).toContain('<del>删除线</del>')
+  })
+
+  it('renders toc from h2-h6 headings and skips h1', () => {
+    const html = markdownToHtml(
+      '# Title\n\n[TOC]\n\n## Intro\n\n### Detail\n\n## End',
+    )
+    expect(html).toContain('<h1 id="title">Title</h1>')
+    expect(html).toContain('<h2 id="intro">Intro</h2>')
+    expect(html).toContain('<h3 id="detail">Detail</h3>')
+    expect(html).toContain('<section>目录导航</section>')
+    expect(html).toContain('<a href="#intro">')
+    expect(html).toContain('<a href="#detail">')
+    expect(html).toContain('<a href="#end">')
+    expect(html).toContain('Intro</a>')
+    expect(html).toContain('Detail</a>')
+    expect(html).toContain('End</a>')
+    expect(html).toContain('└─ ')
+    expect(html).not.toContain('<span>├─ </span>Intro')
+    expect(html).not.toContain('<span>└─ </span>Intro')
+    expect(html).not.toContain('<span>├─ </span>End')
+    expect(html).not.toContain('<span>└─ </span>End')
+    expect(html).not.toContain('<a href="#title">Title</a>')
+    expect(html).not.toContain('<p>[TOC]</p>')
   })
 })
 

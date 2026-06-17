@@ -28,7 +28,7 @@ describe('style-utils', () => {
 describe('renderThemedHast', () => {
   it('injects inline style on block elements', () => {
     const html = render('# Hi\n\npara')
-    expect(html).toMatch(/<h1 style="[^"]+">/)
+    expect(html).toMatch(/<h1 [^>]*style="[^"]+">/)
     expect(html).toMatch(/<p style="[^"]+">/)
   })
 
@@ -73,6 +73,30 @@ describe('renderThemedHast', () => {
     )
     expect(base).not.toContain('font-size:19px')
     expect(tuned).toContain('font-size:19px')
+  })
+
+  it('uses theme primary color for wavy underline', () => {
+    const html = render('~波浪线~')
+    expect(html).toContain('text-decoration-style:wavy')
+    expect(html).toContain(`text-decoration-color:${defaultTheme.tokens.primaryColor}`)
+    expect(html).not.toContain('data-md-wavy')
+  })
+
+  it('renders toc without bullets or link underlines', () => {
+    const html = render('# Title\n\n[TOC]\n\n## Intro\n\n### Detail\n\n## End')
+    expect(html).toContain('list-style:none')
+    expect(html).toContain('text-decoration:none')
+    expect(html).toContain('display:inline-flex')
+    expect(html).toContain('white-space:pre')
+    expect(html).toContain('目录导航')
+    expect(html).toContain('margin-bottom:4px')
+    expect(html).toContain('color:#0066cc')
+    expect(html).toContain('└─ ')
+    expect(html).not.toContain('>├─ </span>Intro')
+    expect(html).not.toContain('>└─ </span>Intro')
+    expect(html).not.toContain('>├─ </span>End')
+    expect(html).not.toContain('>└─ </span>End')
+    expect(html).not.toContain('data-md-toc')
   })
 })
 

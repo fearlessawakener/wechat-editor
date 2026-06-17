@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { MarkdownEditor } from '../editor'
 import { formatMarkdown } from '../markdown-core'
 import { themes, getThemeById, codeThemes, getCodeThemeById } from '../themes'
@@ -10,27 +10,23 @@ import { Toolbar } from './Toolbar.tsx'
 import { Preview } from './Preview.tsx'
 import { CompatibilityBar } from './CompatibilityBar.tsx'
 import { TuningPanel } from './TuningPanel.tsx'
+import { ShortcutDialog } from './ShortcutDialog.tsx'
 import { useThemedRender } from './useThemedRender.ts'
 import { useSyncScroll } from './useSyncScroll.ts'
+import defaultSource from '../storage/sample.md?raw'
+import { matchesShortcut, shortcutDefinitions } from './shortcuts.ts'
 
-const SAMPLE = `# 标题
-
-在左侧编写 **Markdown**，右侧实时预览。
-
-- 列表项一
-- 列表项二
-
-> 引用一段话。
-
-\`\`\`js
-console.log('hello wechat')
-\`\`\`
-`
+const helpShortcut = shortcutDefinitions.find((item) => item.id === 'help')!
+const closeShortcut = shortcutDefinitions.find((item) => item.id === 'close')!
+const newShortcut = shortcutDefinitions.find((item) => item.id === 'new')!
+const formatShortcut = shortcutDefinitions.find((item) => item.id === 'format')!
+const copyShortcut = shortcutDefinitions.find((item) => item.id === 'copy')!
+const resetShortcut = shortcutDefinitions.find((item) => item.id === 'reset')!
 
 export function App() {
   // 启动时优先恢复草稿。
   const draft = loadDraft()
-  const [source, setSource] = useState(draft?.source ?? SAMPLE)
+  const [source, setSource] = useState(draft?.source ?? defaultSource)
   const [themeId, setThemeId] = useState(
     draft?.themeId && getThemeById(draft.themeId).id === draft.themeId
       ? draft.themeId
@@ -48,6 +44,7 @@ export function App() {
   const [windowStyle, setWindowStyle] = useState<WindowStyle>(
     draft?.windowStyle ?? 'mac',
   )
+  const [shortcutDialogOpen, setShortcutDialogOpen] = useState(false)
   const theme = getThemeById(themeId)
 
   const { node, html, tree } = useThemedRender(
@@ -66,40 +63,90 @@ export function App() {
     (v) => saveDraft(v),
   )
 
-  function handleThemeChange(id: string) {
+  const handleThemeChange = useCallback((id: string) => {
     setThemeId(id)
     // 切换主题清空微调：不同主题 token 基底不同，避免颜色/数值错配。
     setOverrides({})
-  }
+  }, [])
 
   // 重置：清空样式微调，并把代码主题/窗口风格恢复到默认（Atom One Dark + Mac）。
-  function handleReset() {
+  const handleReset = useCallback(() => {
     setOverrides({})
     setCodeThemeId(codeThemes[0].id)
     setWindowStyle('mac')
-  }
+  }, [])
 
-  function flash(msg: string) {
+  const flash = useCallback((msg: string) => {
     setToast(msg)
     window.setTimeout(() => setToast(null), 2500)
-  }
+  }, [])
 
-  async function handleCopy() {
+  const handleFormat = useCallback(() => {
+    setSource((s) => formatMarkdown(s))
+  }, [])
+
+  const handleCopy = useCallback(async () => {
     const result = await copyHtml(html, source)
     if (result.ok) {
       flash(result.fallback ? '已复制（兼容模式）' : '已复制到剪贴板')
     } else {
       flash('复制失败，请手动选择预览区内容复制')
     }
-  }
+  }, [flash, html, source])
 
-  function handleNew() {
+  const handleNew = useCallback(() => {
     if (!window.confirm('新建会清空当前内容，确定吗？')) return
     clearDraft()
-    setSource('')
+    setSource(defaultSource)
     setOverrides({})
-    flash('已新建空白文档')
-  }
+    flash('已新建默认文档')
+  }, [flash])
+
+  useEffect(() => {
+    function handleGlobalKeydown(event: KeyboardEvent) {
+      if (matchesShortcut(event, helpShortcut)) {
+        event.preventDefault()
+        setShortcutDialogOpen(true)
+        return
+      }
+
+      if (shortcutDialogOpen) {
+        if (matchesShortcut(event, closeShortcut)) {
+          event.preventDefault()
+          setShortcutDialogOpen(false)
+        }
+        return
+      }
+
+      if (matchesShortcut(event, newShortcut)) {
+        event.preventDefault()
+        handleNew()
+        return
+      }
+
+      if (matchesShortcut(event, formatShortcut)) {
+        event.preventDefault()
+        handleFormat()
+        return
+      }
+
+      if (matchesShortcut(event, copyShortcut)) {
+        event.preventDefault()
+        void handleCopy()
+        return
+      }
+
+      if (matchesShortcut(event, resetShortcut)) {
+        event.preventDefault()
+        handleReset()
+      }
+    }
+
+    window.addEventListener('keydown', handleGlobalKeydown, true)
+    return () => {
+      window.removeEventListener('keydown', handleGlobalKeydown, true)
+    }
+  }, [handleCopy, handleFormat, handleNew, handleReset, shortcutDialogOpen])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -112,7 +159,7 @@ export function App() {
         onCodeThemeChange={setCodeThemeId}
         windowStyle={windowStyle}
         onWindowStyleChange={setWindowStyle}
-        onFormat={() => setSource((s) => formatMarkdown(s))}
+        onFormat={handleFormat}
         onCopy={handleCopy}
         onNew={handleNew}
       />
@@ -152,10 +199,15 @@ export function App() {
           overrides={overrides}
           onChange={setOverrides}
           onReset={handleReset}
+          onOpenShortcuts={() => setShortcutDialogOpen(true)}
         />
       </div>
 
       <CompatibilityBar warnings={warnings} />
+      <ShortcutDialog
+        open={shortcutDialogOpen}
+        onClose={() => setShortcutDialogOpen(false)}
+      />
 
       {toast && (
         <div

@@ -7,6 +7,7 @@ interface TuningPanelProps {
   overrides: Partial<ThemeTokens>
   onChange: (next: Partial<ThemeTokens>) => void
   onReset: () => void
+  onOpenShortcuts: () => void
 }
 
 // 思源系列。
@@ -63,6 +64,7 @@ export function TuningPanel({
   overrides,
   onChange,
   onReset,
+  onOpenShortcuts,
 }: TuningPanelProps) {
   const merged = { ...base, ...overrides }
 
@@ -236,6 +238,29 @@ export function TuningPanel({
           value={merged.headingColor}
           onChange={(e) => set('headingColor', e.target.value)}
         />
+      </div>
+
+      <div
+        style={{
+          marginTop: 14,
+          paddingTop: 12,
+          borderTop: '1px solid #e5e6e8',
+        }}
+      >
+        <button
+          type="button"
+          onClick={onOpenShortcuts}
+          style={{
+            border: 'none',
+            background: 'none',
+            color: '#0066cc',
+            cursor: 'pointer',
+            fontSize: 13,
+            padding: 0,
+          }}
+        >
+          快捷键
+        </button>
       </div>
     </div>
   )
