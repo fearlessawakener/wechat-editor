@@ -4,7 +4,13 @@ import remarkGfm from 'remark-gfm'
 import remarkRehype from 'remark-rehype'
 import rehypeSanitize from 'rehype-sanitize'
 import { toHtml } from 'hast-util-to-html'
-import type { Root as HastRoot, Content as HastContent, Element, Text } from 'hast'
+import type {
+  Root as HastRoot,
+  RootContent as HastRootContent,
+  Element,
+  ElementContent,
+  Text,
+} from 'hast'
 import { wechatSanitizeSchema } from './sanitize-schema.ts'
 
 /**
@@ -39,15 +45,15 @@ function createTextNode(value: string): Text {
 
 function createElement(
   tagName: string,
-  children: HastContent[],
+  children: ElementContent[],
   properties?: Element['properties'],
 ): Element {
   return { type: 'element', tagName, properties: properties ?? {}, children }
 }
 
-function parseInlineSyntax(value: string): HastContent[] {
+function parseInlineSyntax(value: string): ElementContent[] {
   const pattern = /==([^=\n]+)==|\+\+([^+\n]+)\+\+|~([^~\n]+)~/g
-  const nodes: HastContent[] = []
+  const nodes: ElementContent[] = []
   let lastIndex = 0
 
   for (const match of value.matchAll(pattern)) {
@@ -96,13 +102,21 @@ function transformInlineSyntax(node: HastRoot | Element, inCode = false): void {
 
   if (inCode) return
 
-  node.children = node.children.flatMap((child) => {
+  if (node.type === 'root') {
+    node.children = node.children.flatMap((child): HastRootContent[] => {
+      if (child.type !== 'text') return [child]
+      return parseInlineSyntax(child.value)
+    })
+    return
+  }
+
+  node.children = node.children.flatMap((child): ElementContent[] => {
     if (child.type !== 'text') return [child]
     return parseInlineSyntax(child.value)
   })
 }
 
-function getTextContent(node: HastContent): string {
+function getTextContent(node: HastRootContent | ElementContent): string {
   if (node.type === 'text') return node.value
   if (node.type !== 'element') return ''
   return node.children.map((child) => getTextContent(child)).join('')
@@ -183,7 +197,7 @@ function renderTocNodes(
           .map((hasNext) => (hasNext ? '│  ' : '   '))
           .join('') + (isLast ? '└─ ' : '├─ ')
 
-    const children: HastContent[] = [
+    const children: ElementContent[] = [
       createElement(
         'a',
         [
@@ -228,7 +242,30 @@ function buildTocList(items: TocItem[]): Element {
 
 function replaceTocPlaceholders(tree: HastRoot, items: TocItem[]): void {
   function walk(node: HastRoot | Element): void {
-    node.children = node.children.flatMap((child) => {
+    if (node.type === 'root') {
+      node.children = node.children.flatMap((child): HastRootContent[] => {
+        if (
+          child.type === 'element' &&
+          child.tagName === 'p' &&
+          child.children.length === 1 &&
+          child.children[0].type === 'text' &&
+          child.children[0].value.trim() === '[TOC]'
+        ) {
+          if (items.length === 0) return []
+          return [
+            createElement('section', [buildTocList(items)], {
+              'data-md-toc': 'true',
+            }),
+          ]
+        }
+
+        if (child.type === 'element') walk(child)
+        return [child]
+      })
+      return
+    }
+
+    node.children = node.children.flatMap((child): ElementContent[] => {
       if (
         child.type === 'element' &&
         child.tagName === 'p' &&
